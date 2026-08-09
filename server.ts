@@ -1,16 +1,13 @@
 import { WebSocketServer, WebSocket } from 'ws'
 import Game from './src/game/Game'
+import PlayerManager from './src/server/PlayerManager'
+import GameManager from './src/server/GameManager'
 
 const wss = new WebSocketServer({ port: 8080 })
 
 const game = new Game()
 
-const players = new Map<string, {
-    flips: number
-    matches: number
-}>()
-
-let nextPlayerId = 1
+const playerManager = new PlayerManager()
 
 console.log('WebSocket server running on port 8080')
 console.log(
@@ -28,7 +25,11 @@ function broadcastState() {
         }
     })
 }
-
+const gameManager = new GameManager(
+    game,
+    broadcastState,
+    playerManager,
+)
 wss.on('connection', (socket) => {
 
     let playerId = ''
@@ -47,12 +48,7 @@ wss.on('connection', (socket) => {
         if (data.type === 'identify') {
             playerId = data.playerId
 
-            if (!players.has(playerId)) {
-                players.set(playerId, {
-                    flips: 0,
-                    matches: 0,
-                })
-            }
+            playerManager.getOrCreate(playerId)
 
             console.log(`${playerId} identified`)
 
@@ -60,7 +56,7 @@ wss.on('connection', (socket) => {
         }
 
 if (data.type === 'getStats') {
-    const player = players.get(playerId)
+    const player = playerManager.get(playerId)
 
     if (!player) {
         return
@@ -74,17 +70,11 @@ if (data.type === 'getStats') {
     return
 }        
 if (data.type === 'getStats') {
+    const player = playerManager.get(playerId)
 
-    playerId = data.playerId
-
-    if (!players.has(playerId)) {
-        players.set(playerId, {
-            flips: 0,
-            matches: 0,
-        })
+    if (!player) {
+        return
     }
-
-    const player = players.get(playerId)!
 
     socket.send(JSON.stringify({
         type: 'playerStats',
@@ -93,15 +83,14 @@ if (data.type === 'getStats') {
 
     return
 }
+
         if (data.type !== 'flipCard') {
             return
         }
 
         console.log('Card flipped:', data.index)
 
-const player = players.get(playerId)!
-
-player.flips++
+const player = playerManager.addFlip(playerId)
 
 console.log(
     `${playerId} flips: ${player.flips}`
@@ -110,77 +99,20 @@ socket.send(JSON.stringify({
     type: 'playerStats',
     stats: player,
 }))
-        if (game.revealed.length >= 2) {
-            console.log('Rejected: 2 cards already revealed')
-            return
-        }
 
-        if (game.revealed.includes(data.index)) {
-            console.log('Rejected: card already revealed')
-            return
-        }
 
-        if (game.matched.includes(data.index)) {
-            console.log('Rejected: card already matched')
-            return
-        }
-
-        game.revealed.push(data.index)
-
-        console.log('Revealed:', game.revealed)
-
-        if (game.revealed.length === 2) {
-            const [first, second] = game.revealed
-
-            const firstCard = game.cards[first]
-            const secondCard = game.cards[second]
-
-            if (firstCard.pairId === secondCard.pairId) {
-                console.log('MATCH!')
-
-player.matches++
-
-console.log(
-    `${playerId} matches: ${player.matches}`
+const updatedStats = gameManager.flipCard(
+    data.index,
+    playerId
 )
 
-                game.matched.push(first, second)
-                game.revealed = []
-
-                if (game.matched.length === game.cards.length) {
-                    console.log('GAME COMPLETE!')
-
-                    setTimeout(() => {
-                        game.revealed = []
-                        game.matched = []
-
-                        game.cards.sort(
-                            () => Math.random() - 0.5
-                        )
-
-                        console.log(
-                            'NEW GAME:',
-                            game.cards
-                                .map(card => card.symbol)
-                                .join(' ')
-                        )
-
-                        broadcastState()
-                    }, 1000)
-                }
-            } else {
-                console.log('NO MATCH')
-
-                setTimeout(() => {
-                    game.revealed = []
-                    broadcastState()
-                }, 800)
-            }
-        }
-
-        broadcastState()
+if (updatedStats) {
+    socket.send(JSON.stringify({
+        type: 'playerStats',
+        stats: updatedStats,
+    }))
+}
     })
-
     socket.on('close', () => {
         console.log('Client disconnected')
     })
