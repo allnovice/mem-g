@@ -1,31 +1,33 @@
 import { WebSocketServer, WebSocket } from 'ws'
+import Game from './src/game/Game'
 
 const wss = new WebSocketServer({ port: 8080 })
 
-function shuffle<T>(array: T[]) {
-    return array.sort(() => Math.random() - 0.5)
-}
-
-const cards = ['★', '●', '★', '●']
-
-shuffle(cards)
-
-const gameState = {
-    cards,
-    revealed: [] as number[],
-    matched: [] as number[],
-}
+const game = new Game()
 
 console.log('WebSocket server running on port 8080')
-console.log('Game:', gameState.cards.join(' '))
+console.log(
+    'Game:',
+    game.cards.map(card => card.symbol).join(' ')
+)
+
+function broadcastState() {
+    wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify({
+                type: 'gameState',
+                state: game,
+            }))
+        }
+    })
+}
 
 wss.on('connection', (socket) => {
     console.log('Client connected')
 
-    // Send current game state to the new client
     socket.send(JSON.stringify({
         type: 'gameState',
-        state: gameState,
+        state: game,
     }))
 
     socket.on('message', (message) => {
@@ -37,90 +39,69 @@ wss.on('connection', (socket) => {
 
         console.log('Card flipped:', data.index)
 
-        // Maximum of two temporary cards
-        if (gameState.revealed.length >= 2) {
+        if (game.revealed.length >= 2) {
             console.log('Rejected: 2 cards already revealed')
             return
         }
 
-        // Already temporarily revealed
-        if (gameState.revealed.includes(data.index)) {
+        if (game.revealed.includes(data.index)) {
             console.log('Rejected: card already revealed')
             return
         }
 
-        // Already permanently matched
-        if (gameState.matched.includes(data.index)) {
+        if (game.matched.includes(data.index)) {
             console.log('Rejected: card already matched')
             return
         }
 
-        gameState.revealed.push(data.index)
+        game.revealed.push(data.index)
 
-        console.log('Revealed:', gameState.revealed)
+        console.log('Revealed:', game.revealed)
 
-        // Check pair
-        if (gameState.revealed.length === 2) {
-            const [first, second] = gameState.revealed
+        if (game.revealed.length === 2) {
+            const [first, second] = game.revealed
 
-            if (gameState.cards[first] === gameState.cards[second]) {
+            const firstCard = game.cards[first]
+            const secondCard = game.cards[second]
+
+            if (firstCard.pairId === secondCard.pairId) {
                 console.log('MATCH!')
 
-                gameState.matched.push(first, second)
-                gameState.revealed = []
+                game.matched.push(first, second)
+                game.revealed = []
 
-                // Check if the entire game is complete
-                if (gameState.matched.length === gameState.cards.length) {
+                if (game.matched.length === game.cards.length) {
                     console.log('GAME COMPLETE!')
 
                     setTimeout(() => {
-                        shuffle(gameState.cards)
+                        game.revealed = []
+                        game.matched = []
 
-                        gameState.revealed = []
-                        gameState.matched = []
+                        game.cards.sort(
+                            () => Math.random() - 0.5
+                        )
 
                         console.log(
                             'NEW GAME:',
-                            gameState.cards.join(' ')
+                            game.cards
+                                .map(card => card.symbol)
+                                .join(' ')
                         )
 
-                        wss.clients.forEach((client) => {
-                            if (client.readyState === WebSocket.OPEN) {
-                                client.send(JSON.stringify({
-                                    type: 'gameState',
-                                    state: gameState,
-                                }))
-                            }
-                        })
+                        broadcastState()
                     }, 1000)
                 }
             } else {
                 console.log('NO MATCH')
 
                 setTimeout(() => {
-                    gameState.revealed = []
-
-                    wss.clients.forEach((client) => {
-                        if (client.readyState === WebSocket.OPEN) {
-                            client.send(JSON.stringify({
-                                type: 'gameState',
-                                state: gameState,
-                            }))
-                        }
-                    })
+                    game.revealed = []
+                    broadcastState()
                 }, 800)
             }
         }
 
-        // Send current state after every valid flip
-        wss.clients.forEach((client) => {
-            if (client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify({
-                    type: 'gameState',
-                    state: gameState,
-                }))
-            }
-        })
+        broadcastState()
     })
 
     socket.on('close', () => {
