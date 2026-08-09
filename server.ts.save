@@ -31,7 +31,14 @@ function broadcastState() {
 
 wss.on('connection', (socket) => {
 
-    let playerId = ''
+    const playerId = `player-${nextPlayerId++}`
+
+    players.set(playerId, {
+        flips: 0,
+        matches: 0,
+    })
+
+    console.log(`${playerId} connected`)
 
     console.log('Client connected')
 
@@ -41,23 +48,7 @@ wss.on('connection', (socket) => {
     }))
 
     socket.on('message', (message) => {
-
         const data = JSON.parse(message.toString())
-
-        if (data.type === 'identify') {
-            playerId = data.playerId
-
-            if (!players.has(playerId)) {
-                players.set(playerId, {
-                    flips: 0,
-                    matches: 0,
-                })
-            }
-
-            console.log(`${playerId} identified`)
-
-            return
-        }
 
 if (data.type === 'getStats') {
     const player = players.get(playerId)
@@ -72,27 +63,8 @@ if (data.type === 'getStats') {
     }))
 
     return
-}        
-if (data.type === 'getStats') {
-
-    playerId = data.playerId
-
-    if (!players.has(playerId)) {
-        players.set(playerId, {
-            flips: 0,
-            matches: 0,
-        })
-    }
-
-    const player = players.get(playerId)!
-
-    socket.send(JSON.stringify({
-        type: 'playerStats',
-        stats: player,
-    }))
-
-    return
 }
+
         if (data.type !== 'flipCard') {
             return
         }
@@ -106,10 +78,7 @@ player.flips++
 console.log(
     `${playerId} flips: ${player.flips}`
 )
-socket.send(JSON.stringify({
-    type: 'playerStats',
-    stats: player,
-}))
+
         if (game.revealed.length >= 2) {
             console.log('Rejected: 2 cards already revealed')
             return
