@@ -6,6 +6,7 @@ import type { CardData } from '../game/types'
 export default class GameScene extends Phaser.Scene {
     private board!: Board
     private cards: Card[] = []
+    private gameId = 0
     private socket!: WebSocket
 
     private playerId!: string
@@ -220,11 +221,15 @@ if (message.type === 'ranking') {
             /*
              * Create board once
              */
-            if (this.cards.length === 0) {
-                this.createBoard(
-                    message.state.cards
-                )
-            }
+
+if (this.gameId !== message.state.gameId) {
+    this.gameId = message.state.gameId
+
+    this.cards.forEach(card => card.destroy())
+    this.cards = []
+
+    this.createBoard(message.state.cards)
+}
 
             /*
              * Update cards
@@ -238,27 +243,35 @@ const revealedCard =
             card.index === index
     )
 
-                    const matched =
-                        message.state.matched
-                            .includes(index)
+const matchedCard =
+    message.state.matched.find(
+        (card: { index: number; symbol: string }) =>
+            card.index === index
+    )
 
                     if (
                         revealedCard ||
-                        matched
+                        matchedCard
                     ) {
- 
-if (revealedCard || matched) {
+
+if (revealedCard || matchedCard) {
     if (!card.isRevealed()) {
-        card.reveal(revealedCard?.symbol ?? '')
+        card.reveal(
+            revealedCard?.symbol ??
+            matchedCard?.symbol ??
+            ''
+        )
+    }
+}
+                    } else {
+
+if (!revealedCard && !matchedCard) {
+    if (card.isRevealed()) {
+        card.hide()
     }
 }
 
-                    } else {
-                        if (
-                            card.isRevealed()
-                        ) {
-                            card.hide()
-                        }
+
                     }
                 }
             )

@@ -5,6 +5,7 @@ export type CardData = {
 }
 
 export default class Game {
+    gameId = 0
     cards: CardData[] = []
 
     revealed: number[] = []
@@ -16,6 +17,7 @@ export default class Game {
     }
 
     private createCards() {
+        this.gameId++
         const symbols = [
             '★', '●', '▲', '■',
             '♥', '♦', '♣', '♠',

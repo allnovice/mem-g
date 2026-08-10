@@ -21,14 +21,18 @@ function broadcastState() {
             client.send(JSON.stringify({
                 type: 'gameState',
                 state: {
+                    gameId: game.gameId,
                     cards: game.cards.map(card => ({
                         id: card.id,
                     })),
- revealed: game.revealed.map(index => ({
+revealed: game.revealed.map(index => ({
     index,
     symbol: game.cards[index].symbol,
 })),
-                    matched: game.matched,
+matched: game.matched.map(index => ({
+    index,
+    symbol: game.cards[index].symbol,
+})),
                 },
             }))
         }
@@ -69,10 +73,26 @@ wss.on('connection', (socket) => {
 
     console.log('Client connected')
 
-    socket.send(JSON.stringify({
-        type: 'gameState',
-        state: game,
-    }))
+socket.send(JSON.stringify({
+    type: 'gameState',
+    state: {
+        gameId: game.gameId,
+
+        cards: game.cards.map(card => ({
+            id: card.id,
+        })),
+
+        revealed: game.revealed.map(index => ({
+            index,
+            symbol: game.cards[index].symbol,
+        })),
+
+matched: game.matched.map(index => ({
+    index,
+    symbol: game.cards[index].symbol,
+})),
+    },
+}))
 
     socket.on('message', (message) => {
 

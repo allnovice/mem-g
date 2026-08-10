@@ -51,4 +51,8 @@ export class Card {
     onClick(callback: () => void) {
         this.card.on('pointerdown', callback)
     }
+destroy() {
+    this.card.destroy()
+    this.text.destroy()
+}
 }
