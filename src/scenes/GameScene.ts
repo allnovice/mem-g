@@ -117,14 +117,11 @@ this.rankingText.setOrigin(1, 0)
         /*
          * WebSocket
          */
-const protocol =
-    window.location.protocol === 'https:'
-        ? 'wss:'
-        : 'ws:'
 
-this.socket = new WebSocket(
-    `${protocol}//${window.location.host}/socket`
-)
+const wsUrl = import.meta.env.VITE_WS_URL
+
+this.socket = new WebSocket(wsUrl)
+
         this.socket.onopen = () => {
             console.log(
                 'WebSocket connected'
