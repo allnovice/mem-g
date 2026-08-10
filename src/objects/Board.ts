@@ -49,7 +49,7 @@ export default class Board {
 
         this.cardHeight = this.cardWidth * 1.5
 
-        cards.forEach((cardData, index) => {
+        cards.forEach((_, index) => {
             const position = this.getCardPosition(
                 index,
                 columns,
@@ -60,7 +60,6 @@ export default class Board {
                 this.scene,
                 position.x,
                 position.y,
-                cardData.symbol,
                 this.cardWidth,
                 this.cardHeight
             )

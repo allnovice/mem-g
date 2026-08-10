@@ -20,7 +20,16 @@ function broadcastState() {
         if (client.readyState === WebSocket.OPEN) {
             client.send(JSON.stringify({
                 type: 'gameState',
-                state: game,
+                state: {
+                    cards: game.cards.map(card => ({
+                        id: card.id,
+                    })),
+ revealed: game.revealed.map(index => ({
+    index,
+    symbol: game.cards[index].symbol,
+})),
+                    matched: game.matched,
+                },
             }))
         }
     })

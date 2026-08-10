@@ -231,23 +231,28 @@ if (message.type === 'ranking') {
              */
             this.cards.forEach(
                 (card, index) => {
-                    const revealed =
-                        message.state.revealed
-                            .includes(index)
+                    
+const revealedCard =
+    message.state.revealed.find(
+        (card: { index: number; symbol: string }) =>
+            card.index === index
+    )
 
                     const matched =
                         message.state.matched
                             .includes(index)
 
                     if (
-                        revealed ||
+                        revealedCard ||
                         matched
                     ) {
-                        if (
-                            !card.isRevealed()
-                        ) {
-                            card.reveal()
-                        }
+ 
+if (revealedCard || matched) {
+    if (!card.isRevealed()) {
+        card.reveal(revealedCard?.symbol ?? '')
+    }
+}
+
                     } else {
                         if (
                             card.isRevealed()

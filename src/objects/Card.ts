@@ -1,7 +1,6 @@
 import Phaser from 'phaser'
 
 export class Card {
-    public readonly symbol: string
     public readonly card: Phaser.GameObjects.Rectangle
     public readonly text: Phaser.GameObjects.Text
 
@@ -11,11 +10,9 @@ export class Card {
         scene: Phaser.Scene,
         x: number,
         y: number,
-        symbol: string,
         width: number,
         height: number
     ) {
-        this.symbol = symbol
 
         this.card = scene.add.rectangle(
             x,
@@ -35,10 +32,10 @@ export class Card {
         this.card.setInteractive()
     }
 
-    reveal() {
+    reveal(symbol: string) {
         this.revealed = true
         this.card.setFillStyle(0xe74c3c)
-        this.text.setText(this.symbol)
+        this.text.setText(symbol)
     }
 
     hide() {
