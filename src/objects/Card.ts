@@ -11,15 +11,17 @@ export class Card {
         scene: Phaser.Scene,
         x: number,
         y: number,
-        symbol: string
+        symbol: string,
+        width: number,
+        height: number
     ) {
         this.symbol = symbol
 
         this.card = scene.add.rectangle(
             x,
             y,
-            80,
-            120,
+            width,
+            height,
             0x3498db
         )
 

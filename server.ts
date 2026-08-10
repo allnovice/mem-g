@@ -25,9 +25,33 @@ function broadcastState() {
         }
     })
 }
+function broadcastEvent(message: string) {
+    wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify({
+                type: 'gameEvent',
+                message,
+            }))
+        }
+    })
+}
+function broadcastRanking() {
+    const players =
+        playerManager.getTopPlayers(3)
+
+    wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify({
+                type: 'ranking',
+                players,
+            }))
+        }
+    })
+}
 const gameManager = new GameManager(
     game,
     broadcastState,
+    broadcastRanking,
     playerManager,
 )
 wss.on('connection', (socket) => {
@@ -48,13 +72,17 @@ wss.on('connection', (socket) => {
         if (data.type === 'identify') {
             playerId = data.playerId
 
-            playerManager.getOrCreate(playerId)
+            playerManager.getOrCreate(playerId, data.displayName)
 
-            console.log(`${playerId} identified`)
+console.log(
+    `${playerId} identified as ${data.displayName}`
+)
+
+            broadcastEvent(`${data.displayName} connected`)
 
             return
         }
-
+     
 if (data.type === 'getStats') {
     const player = playerManager.get(playerId)
 
@@ -68,17 +96,11 @@ if (data.type === 'getStats') {
     }))
 
     return
-}        
-if (data.type === 'getStats') {
-    const player = playerManager.get(playerId)
-
-    if (!player) {
-        return
-    }
-
+}
+if (data.type === 'getRanking') {
     socket.send(JSON.stringify({
-        type: 'playerStats',
-        stats: player,
+        type: 'ranking',
+        players: playerManager.getTopPlayers(3),
     }))
 
     return

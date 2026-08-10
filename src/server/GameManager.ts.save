@@ -66,8 +66,6 @@ if (this.game.revealed.length === 2) {
 
             const player = this.playerManager.addMatch(playerId)
 
-            this.broadcastRanking()
-
             this.game.matched.push(first, second)
             this.game.revealed = []
 
