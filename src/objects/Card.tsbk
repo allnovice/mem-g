@@ -2,7 +2,7 @@ import Phaser from 'phaser'
 
 export class Card {
     public readonly card: Phaser.GameObjects.Rectangle
-    public readonly text: Phaser.GameObjects.Text
+    public readonly image: Phaser.GameObjects.Image
 
     private revealed = false
 
@@ -11,9 +11,9 @@ export class Card {
         x: number,
         y: number,
         width: number,
-        height: number
+        height: number,
+        icon: string
     ) {
-
         this.card = scene.add.rectangle(
             x,
             y,
@@ -22,26 +22,27 @@ export class Card {
             0x3498db
         )
 
-        this.text = scene.add.text(x, y, '?', {
-            fontSize: '40px',
-            color: '#ffffff',
-        })
+        this.image = scene.add.image(
+            x,
+            y,
+            icon
+        )
 
-        this.text.setOrigin(0.5)
+        this.image.setVisible(false)
 
         this.card.setInteractive()
     }
 
-    reveal(symbol: string) {
+    reveal() {
         this.revealed = true
         this.card.setFillStyle(0xe74c3c)
-        this.text.setText(symbol)
+        this.image.setVisible(true)
     }
 
     hide() {
         this.revealed = false
         this.card.setFillStyle(0x3498db)
-        this.text.setText('?')
+        this.image.setVisible(false)
     }
 
     isRevealed() {
@@ -51,8 +52,9 @@ export class Card {
     onClick(callback: () => void) {
         this.card.on('pointerdown', callback)
     }
-destroy() {
-    this.card.destroy()
-    this.text.destroy()
-}
+
+    destroy() {
+        this.card.destroy()
+        this.image.destroy()
+    }
 }

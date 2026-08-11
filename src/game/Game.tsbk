@@ -1,0 +1,39 @@
+export type CardData = {
+    id: number
+    pairId: number
+}
+
+export default class Game {
+    gameId = 0
+    cards: CardData[] = []
+
+    revealed: number[] = []
+    matched: number[] = []
+
+    constructor() {
+        this.createCards()
+    }
+
+    private createCards() {
+        this.gameId++
+
+        const pairCount = 8
+        const cards: CardData[] = []
+
+        for (let pairId = 0; pairId < pairCount; pairId++) {
+            cards.push({
+                id: cards.length,
+                pairId,
+            })
+
+            cards.push({
+                id: cards.length,
+                pairId,
+            })
+        }
+
+        cards.sort(() => Math.random() - 0.5)
+
+        this.cards = cards
+    }
+}

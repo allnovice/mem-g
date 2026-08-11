@@ -37,7 +37,29 @@ export default class GameScene extends Phaser.Scene {
             })
         })
     }
+preload() {
+    const icons = [
+        'star',
+        'heart',
+        'rocket',
+        'camera',
+        'bell',
+        'cloud',
+        'cube',
+        'home',
+    ]
 
+    icons.forEach(icon => {
+        this.load.svg(
+            icon,
+            `/${icon}.svg`,
+            {
+                width: 80,
+                height: 80,
+            }
+        )
+    })
+}
     create() {
         /*
          * Board
@@ -256,11 +278,7 @@ const matchedCard =
 
 if (revealedCard || matchedCard) {
     if (!card.isRevealed()) {
-        card.reveal(
-            revealedCard?.symbol ??
-            matchedCard?.symbol ??
-            ''
-        )
+        card.reveal()
     }
 }
                     } else {

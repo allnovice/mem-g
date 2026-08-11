@@ -1,46 +1,91 @@
-export type CardData = {
+export type Card = {
     id: number
-    pairId: number
     symbol: string
 }
 
 export default class Game {
-    gameId = 0
-    cards: CardData[] = []
+    cards: Card[] = []
 
     revealed: number[] = []
 
     matched: number[] = []
 
-    constructor() {
-        this.createCards()
+    locked = false
+
+    constructor(symbols: string[]) {
+        this.reset(symbols)
     }
 
-    private createCards() {
-        this.gameId++
-        const symbols = [
-            '★', '●', '▲', '■',
-            '♥', '♦', '♣', '♠',
-        ]
+    flip(id: number) {
+        if (this.locked) {
+            return false
+        }
 
-        const cards: CardData[] = []
+        if (this.revealed.includes(id)) {
+            return false
+        }
 
-        symbols.forEach((symbol, pairId) => {
-            cards.push({
-                id: cards.length,
-                pairId,
-                symbol,
-            })
+        if (this.matched.includes(id)) {
+            return false
+        }
 
-            cards.push({
-                id: cards.length,
-                pairId,
-                symbol,
-            })
-        })
+        this.revealed.push(id)
 
-        cards.sort(() => Math.random() - 0.5)
+        return true
+    }
 
-        this.cards = cards
+    checkMatch() {
+        if (this.revealed.length !== 2) {
+            return null
+        }
+
+        const first = this.revealed[0]
+        const second = this.revealed[1]
+
+        const match =
+            this.cards[first].symbol ===
+            this.cards[second].symbol
+
+        if (match) {
+            this.matched.push(first, second)
+            this.revealed = []
+
+            return true
+        }
+
+        return false
+    }
+
+    hideRevealed() {
+        this.revealed = []
+    }
+
+    isComplete() {
+        return this.matched.length === this.cards.length
+    }
+
+    reset(symbols: string[]) {
+        const pairs = [...symbols, ...symbols]
+
+        this.cards = pairs.map((symbol, id) => ({
+            id,
+            symbol,
+        }))
+
+        this.shuffle()
+
+        this.revealed = []
+        this.matched = []
+        this.locked = false
+    }
+
+    private shuffle() {
+        for (let i = this.cards.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1))
+
+            const temp = this.cards[i]
+            this.cards[i] = this.cards[j]
+            this.cards[j] = temp
+        }
     }
 }

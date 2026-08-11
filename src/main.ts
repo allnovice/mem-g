@@ -1,17 +1,17 @@
 import Phaser from 'phaser'
-import GameScene from './scenes/GameScene'
+import MemoryScene from './scenes/MemoryScene'
 
 const config: Phaser.Types.Core.GameConfig = {
-    type: Phaser.AUTO,
+    type: Phaser.CANVAS,
 
-    scale: {
-        mode: Phaser.Scale.RESIZE,
-        autoCenter: Phaser.Scale.CENTER_BOTH,
-    },
+    width: 600,
+    height: 600,
+
+    parent: 'game',
 
     backgroundColor: '#222222',
 
-    scene: GameScene,
+    scene: MemoryScene,
 }
 
 new Phaser.Game(config)
