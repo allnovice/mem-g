@@ -6,6 +6,7 @@ export default class GameUI {
     private ranking: Phaser.GameObjects.Text
     private onNameChange:
     ((name: string) => void) | null = null
+    private globalStats: Phaser.GameObjects.Text
 
     constructor(scene: Phaser.Scene) {
         this.stats = scene.add.text(
@@ -50,6 +51,19 @@ export default class GameUI {
 
         this.ranking.setOrigin(1, 0)
         this.ranking.setDepth(1000)
+        
+this.globalStats = scene.add.text(
+    scene.scale.width - 10,
+    54,
+    '',
+    {
+        fontSize: '16px',
+        color: '#ffffff',
+    },
+)
+
+this.globalStats.setOrigin(1, 0)
+this.globalStats.setDepth(1000)
 
         this.playerName.on(
             'pointerdown',
@@ -57,6 +71,9 @@ export default class GameUI {
                 this.showNameModal()
             },
         )
+
+
+
     }
 
     setStats(
@@ -254,5 +271,14 @@ setNameChangeHandler(
 ) {
     this.onNameChange = handler
 }
+setGlobalStats(
+    flips: number,
+    matches: number,
+) {
+    this.globalStats.setText(
+        `Global |F:${flips}|M:${matches}`,
+    )
+}
+
  
 }

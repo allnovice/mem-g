@@ -176,6 +176,12 @@ if (message.type === 'leader') {
         message.matches,
     )
 }
+if (message.type === 'global') {
+    this.ui.setGlobalStats(
+        message.flips,
+        message.matches,
+    )
+}
 if (message.type === 'name') {
     if (
         message.playerId ===

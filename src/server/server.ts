@@ -70,6 +70,9 @@ const players = new Map<string, {
 }>()
 const clients = new Set<WebSocket>()
 
+let globalFlips = 0
+let globalMatches = 0
+
 function getLeader() {
     let leaderId = ''
     let highestMatches = -1
@@ -115,9 +118,14 @@ for (const client of clients) {
             playerId: leader.name,
             matches: leader.matches,
         }))
+
+        client.send(JSON.stringify({
+            type: 'global',
+            flips: globalFlips,
+            matches: globalMatches,
+        }))
     }
 }
-
 socket.on('close', () => {
     clients.delete(socket)
 })
@@ -188,6 +196,8 @@ if (message.type === 'name') {
         }
 
         players.get(playerId!)!.flips++
+        globalFlips++
+
 socket.send(JSON.stringify({
     type: 'stats',
     playerId,
@@ -221,7 +231,10 @@ for (const client of clients) {
         const match = game.checkMatch()
 if (match === true) {
     players.get(playerId!)!.matches++
+    globalMatches++
 }
+
+
 socket.send(JSON.stringify({
     type: 'stats',
     playerId,
@@ -250,6 +263,12 @@ for (const client of clients) {
             type: 'leader',
             playerId: leader.name,
             matches: leader.matches,
+        }))
+
+        client.send(JSON.stringify({
+            type: 'global',
+            flips: globalFlips,
+            matches: globalMatches,
         }))
     }
 }
