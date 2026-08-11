@@ -6,19 +6,60 @@ type Card = {
 }
 
 const symbols = [
+    'academic-cap.svg',
+    'banknotes.svg',
+    'beaker.svg',
     'bell.svg',
+    'bookmark.svg',
+    'briefcase.svg',
+    'bug-ant.svg',
+    'building-office.svg',
+    'cake.svg',
+    'calculator.svg',
+    'calendar.svg',
     'camera.svg',
+    'chart-bar.svg',
+    'chat-bubble-left.svg',
+    'check-circle.svg',
     'cloud.svg',
+    'computer-desktop.svg',
+    'cpu-chip.svg',
     'cube.svg',
+    'device-phone-mobile.svg',
+    'document.svg',
+    'envelope.svg',
+    'eye.svg',
+    'face-smile.svg',
+    'film.svg',
+    'fire.svg',
+    'flag.svg',
+    'folder.svg',
+    'gift.svg',
+    'globe-alt.svg',
     'heart.svg',
+    'home.svg',
     'key.svg',
-    'rocket.svg',
+    'light-bulb.svg',
+    'lock-closed.svg',
+    'map-pin.svg',
+    'megaphone.svg',
+    'microphone.svg',
+    'musical-note.svg',
+    'paper-airplane.svg',
+    'photo.svg',
+    'rocket-launch.svg',
+    'shopping-cart.svg',
+    'sparkles.svg',
     'star.svg',
+    'sun.svg',
+    'trophy.svg',
+    'truck.svg',
+    'user.svg',
+    'wrench.svg',
 ]
 
-const back = 'lock.svg'
+const back = 'lock-closed.svg'
 
-const cardSize = 120
 const gap = 16
 
 export default class MemoryScene extends Phaser.Scene {
@@ -40,153 +81,171 @@ export default class MemoryScene extends Phaser.Scene {
         this.load.image(back, `/${back}`)
     }
 
+    create() {
+        this.game.events.on('resume', () => {
+            console.log('GAME RESUMED')
 
+            this.game.loop.resetDelta()
 
-
-
-
-
-
-
-
-
-
-
-
-
-create() {
-
-    const info = this.add.text(
-        10,
-        10,
-        '',
-        {
-            fontSize: '16px',
-            color: '#ffffff',
-            backgroundColor: '#000000',
-        },
-    )
-
-    info.setDepth(1000)
-
-    this.time.addEvent({
-        delay: 500,
-        loop: true,
-        callback: () => {
-            const renderer = this.game.renderer
-
-            const type =
-                renderer instanceof Phaser.Renderer.WebGL.WebGLRenderer
-                    ? 'WebGL'
-                    : 'Canvas'
-
-            info.setText(
-                `Renderer: ${type}\n` +
-                `FPS: ${this.game.loop.actualFps.toFixed(1)}`
-            )
-        },
-    })
-
-    const debug = this.add.text(
-        10,
-        100,
-        '',
-        {
-            fontSize: '12px',
-            color: '#ffffff',
-            backgroundColor: '#000000',
-            wordWrap: {
-                width: 580,
-            },
-        },
-    )
-
-    debug.setDepth(1000)
-
-    this.socket = new WebSocket(
-        'ws://192.168.100.40:3000',
-    )
-
-    this.socket.onmessage = event => {
-        const message = JSON.parse(event.data)
-
-debug.setText(
-    `type: ${message.type}\n` +
-    `revealed: ${JSON.stringify(message.revealed)}\n` +
-    `matched: ${JSON.stringify(message.matched)}`
-)
-document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
-        if (this.socket.readyState === WebSocket.OPEN) {
             this.socket.send(JSON.stringify({
                 type: 'sync',
             }))
+        })
+
+        const info = this.add.text(
+            10,
+            10,
+            '',
+            {
+                fontSize: '16px',
+                color: '#ffffff',
+                backgroundColor: '#000000',
+            },
+        )
+
+        info.setDepth(1000)
+
+const stats = this.add.text(
+    this.scale.width - 10,
+    10,
+    '',
+    {
+        fontSize: '16px',
+        color: '#ffffff',
+        backgroundColor: '#000000',
+    },
+)
+
+stats.setOrigin(1, 0)
+stats.setDepth(1000)
+
+        this.time.addEvent({
+            delay: 500,
+            loop: true,
+            callback: () => {
+                const renderer = this.game.renderer
+
+                const type =
+                    renderer instanceof Phaser.Renderer.WebGL.WebGLRenderer
+                        ? 'WebGL'
+                        : 'Canvas'
+
+                info.setText(
+                    `Renderer: ${type}\n` +
+                    `FPS: ${this.game.loop.actualFps.toFixed(1)}`
+                )
+            },
+        })
+
+        this.socket = new WebSocket(
+            'ws://192.168.100.40:3000',
+        )
+
+        this.socket.onopen = () => {
+            this.socket.send(JSON.stringify({
+                type: 'identify',
+                playerId: localStorage.getItem('playerId'),
+            }))
         }
-    }
-})
-        if (message.type === 'game') {
-            this.cards = message.cards
 
-            this.createBoard()
+        this.socket.onmessage = event => {
+            const message = JSON.parse(event.data)
 
-            for (const id of [
-                ...message.revealed,
-                ...message.matched,
-            ]) {
-                this.showCard(id)
+            if (message.type === 'player') {
+                localStorage.setItem(
+                    'playerId',
+                    message.playerId,
+                )
             }
-        }
 
-        if (message.type === 'flip') {
-            this.flipCardVisual(message.id)
-        }
-
-        if (message.type === 'match') {
-            if (!message.match) {
-                this.time.delayedCall(800, () => {
-                    this.hideCard(message.first)
-                    this.hideCard(message.second)
-                })
-            }
-        }
-
-        if (message.type === 'reset') {
-            this.resetBoard(message.cards)
-        }
-    }
+if (message.type === 'stats') {
+    stats.setText(
+        `M:${message.matches} | F:${message.flips} | ${message.playerId}`
+    )
 }
 
+            if (message.type === 'game') {
+                this.cards = message.cards
+
+                this.createBoard()
+
+                for (const id of [
+                    ...message.revealed,
+                    ...message.matched,
+                ]) {
+                    this.showCard(id)
+                }
+            }
+
+            if (message.type === 'flip') {
+                this.flipCardVisual(message.id)
+            }
+
+            if (message.type === 'match') {
+                if (!message.match) {
+                    this.time.delayedCall(800, () => {
+                        this.hideCard(message.first)
+                        this.hideCard(message.second)
+                    })
+                }
+            }
+
+            if (message.type === 'reset') {
+                this.resetBoard(message.cards)
+            }
+        }
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                if (this.socket.readyState === WebSocket.OPEN) {
+                    this.socket.send(JSON.stringify({
+                        type: 'sync',
+                    }))
+                }
+            }
+        })
+    }
 
     createBoard() {
+        const availableWidth =
+            this.scale.width - 32
+
+        const responsiveCardSize =
+            Math.floor(
+                (availableWidth - 9 * gap) / 10
+            )
+
         const boardSize =
-            4 * cardSize + 3 * gap
+            10 * responsiveCardSize + 9 * gap
 
         const startX =
             (this.scale.width - boardSize) / 2 +
-            cardSize / 2
+            responsiveCardSize / 2
 
         const startY =
             (this.scale.height - boardSize) / 2 +
-            cardSize / 2
+            responsiveCardSize / 2
 
-        this.cards.forEach((card, index) => {
-            const col = index % 4
-            const row = Math.floor(index / 4)
+        this.cards.forEach((_, index) => {
+            const columns = 10
+
+            const col = index % columns
+            const row = Math.floor(index / columns)
 
             const x =
                 startX +
-                col * (cardSize + gap)
+                col * (responsiveCardSize + gap)
 
             const y =
                 startY +
-                row * (cardSize + gap)
+                row * (responsiveCardSize + gap)
 
             const background =
                 this.add.rectangle(
                     0,
                     0,
-                    cardSize,
-                    cardSize,
+                    responsiveCardSize,
+                    responsiveCardSize,
                     0xffffff,
                 )
 
@@ -202,7 +261,7 @@ document.addEventListener('visibilitychange', () => {
                     back,
                 )
 
-            image.setDisplaySize(60, 60)
+            image.setDisplaySize(30, 30)
 
             const cardObject =
                 this.add.container(
@@ -215,8 +274,8 @@ document.addEventListener('visibilitychange', () => {
                 )
 
             cardObject.setSize(
-                cardSize,
-                cardSize,
+                responsiveCardSize,
+                responsiveCardSize,
             )
 
             cardObject.setInteractive()
@@ -242,20 +301,25 @@ document.addEventListener('visibilitychange', () => {
                 cardObject
         })
     }
-showCard(id: number) {
-    const card = this.cardObjects[id]
 
-    if (!card) {
-        return
+    showCard(id: number) {
+        const card =
+            this.cardObjects[id]
+
+        if (!card) {
+            return
+        }
+
+        const image =
+            card.getData(
+                'image',
+            ) as Phaser.GameObjects.Image
+
+        image.setTexture(
+            this.cards[id].symbol,
+        )
     }
 
-    const image =
-        card.getData('image') as Phaser.GameObjects.Image
-
-    image.setTexture(
-        this.cards[id].symbol,
-    )
-}
     flipCardVisual(id: number) {
         const card =
             this.cardObjects[id]
