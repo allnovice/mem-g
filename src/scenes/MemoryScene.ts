@@ -25,38 +25,6 @@ const symbols = [
     'cloud.svg',
     'computer-desktop.svg',
     'cpu-chip.svg',
-    'cube.svg',
-    'device-phone-mobile.svg',
-    'document.svg',
-    'envelope.svg',
-    'eye.svg',
-    'face-smile.svg',
-    'film.svg',
-    'fire.svg',
-    'flag.svg',
-    'folder.svg',
-    'gift.svg',
-    'globe-alt.svg',
-    'heart.svg',
-    'home.svg',
-    'key.svg',
-    'light-bulb.svg',
-    'lock-closed.svg',
-    'map-pin.svg',
-    'megaphone.svg',
-    'microphone.svg',
-    'musical-note.svg',
-    'paper-airplane.svg',
-    'photo.svg',
-    'rocket-launch.svg',
-    'shopping-cart.svg',
-    'sparkles.svg',
-    'star.svg',
-    'sun.svg',
-    'trophy.svg',
-    'truck.svg',
-    'user.svg',
-    'wrench.svg',
 ]
 
 const back = 'lock-closed.svg'
@@ -253,11 +221,11 @@ if (message.type === 'stats') {
 
         const responsiveCardSize =
             Math.floor(
-                (availableWidth - 9 * gap) / 10
+                (availableWidth - 6 * gap) / 6
             )
 
         const boardSize =
-            10 * responsiveCardSize + 9 * gap
+            6 * responsiveCardSize + 5 * gap
 
         const startX =
             (this.scale.width - boardSize) / 2 +
@@ -268,7 +236,7 @@ if (message.type === 'stats') {
             responsiveCardSize / 2
 
         this.cards.forEach((_, index) => {
-            const columns = 10
+            const columns = 6
 
             const col = index % columns
             const row = Math.floor(index / columns)
@@ -302,7 +270,7 @@ if (message.type === 'stats') {
                     back,
                 )
 
-            image.setDisplaySize(30, 30)
+            image.setDisplaySize(85, 85)
 
             const cardObject =
                 this.add.container(
