@@ -96,12 +96,13 @@ export default class MemoryScene extends Phaser.Scene {
             },
         })
 
-        this.socket = new WebSocket(
-            'ws://192.168.100.40:3000',
-        )
+const wsUrl =
+    import.meta.env.VITE_WS_URL
 
 this.socket = new WebSocket(
-    'ws://192.168.100.40:3000',
+    wsUrl.startsWith('/')
+        ? `${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}${wsUrl}`
+        : wsUrl,
 )
 
 this.ui.setNameChangeHandler(
