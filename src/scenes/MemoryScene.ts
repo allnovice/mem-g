@@ -1,4 +1,5 @@
 import Phaser from 'phaser'
+import GameUI from '../ui/GameUI'
 
 type Card = {
     id: number
@@ -65,6 +66,8 @@ const gap = 16
 export default class MemoryScene extends Phaser.Scene {
     socket!: WebSocket
 
+    ui!: GameUI
+
     cards: Card[] = []
 
     cardObjects: Phaser.GameObjects.Container[] = []
@@ -92,6 +95,8 @@ export default class MemoryScene extends Phaser.Scene {
             }))
         })
 
+        this.ui = new GameUI(this)
+
         const info = this.add.text(
             10,
             10,
@@ -104,20 +109,6 @@ export default class MemoryScene extends Phaser.Scene {
         )
 
         info.setDepth(1000)
-
-const stats = this.add.text(
-    this.scale.width - 10,
-    10,
-    '',
-    {
-        fontSize: '16px',
-        color: '#ffffff',
-        backgroundColor: '#000000',
-    },
-)
-
-stats.setOrigin(1, 0)
-stats.setDepth(1000)
 
         this.time.addEvent({
             delay: 500,
@@ -141,6 +132,21 @@ stats.setDepth(1000)
             'ws://192.168.100.40:3000',
         )
 
+this.socket = new WebSocket(
+    'ws://192.168.100.40:3000',
+)
+
+this.ui.setNameChangeHandler(
+    (name) => {
+        this.socket.send(
+            JSON.stringify({
+                type: 'name',
+                name,
+            }),
+        )
+    },
+)
+
         this.socket.onopen = () => {
             this.socket.send(JSON.stringify({
                 type: 'identify',
@@ -151,16 +157,45 @@ stats.setDepth(1000)
         this.socket.onmessage = event => {
             const message = JSON.parse(event.data)
 
-            if (message.type === 'player') {
-                localStorage.setItem(
-                    'playerId',
-                    message.playerId,
-                )
-            }
+if (message.type === 'player') {
+    localStorage.setItem(
+        'playerId',
+        message.playerId,
+    )
 
+    this.ui.setStats(
+        message.playerId,
+        message.flips,
+        message.matches,
+    )
+}
+
+if (message.type === 'leader') {
+    this.ui.setRanking(
+        message.playerId,
+        message.matches,
+    )
+}
+if (message.type === 'name') {
+    if (
+        message.playerId ===
+        localStorage.getItem('playerId')
+    ) {
+        localStorage.setItem(
+            'displayName',
+            message.name,
+        )
+
+        this.ui.setDisplayName(
+            message.name,
+        )
+    }
+}
 if (message.type === 'stats') {
-    stats.setText(
-        `M:${message.matches} | F:${message.flips} | ${message.playerId}`
+    this.ui.setStats(
+        message.playerId,
+        message.flips,
+        message.matches,
     )
 }
 

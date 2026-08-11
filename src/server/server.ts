@@ -64,10 +64,31 @@ const server = new WebSocketServer({
 })
 const game = new Game(symbols)
 const players = new Map<string, {
+    name: string
     flips: number
     matches: number
 }>()
 const clients = new Set<WebSocket>()
+
+function getLeader() {
+    let leaderId = ''
+    let highestMatches = -1
+
+    for (const [id, stats] of players) {
+        if (stats.matches > highestMatches) {
+            leaderId = id
+            highestMatches = stats.matches
+        }
+    }
+
+    const leader = players.get(leaderId)
+
+    return {
+        playerId: leaderId,
+        name: leader?.name ?? leaderId,
+        matches: highestMatches,
+    }
+}
 server.on('connection', socket => {
     console.log('Client connected')
 
@@ -85,6 +106,18 @@ let playerId = ''
         matched: game.matched,
     }))
 
+const leader = getLeader()
+
+for (const client of clients) {
+    if (client.readyState === WebSocket.OPEN) {
+        client.send(JSON.stringify({
+            type: 'leader',
+            playerId: leader.name,
+            matches: leader.matches,
+        }))
+    }
+}
+
 socket.on('close', () => {
     clients.delete(socket)
 })
@@ -95,6 +128,7 @@ if (message.type === 'identify') {
     message.playerId || createGuestId()
 if (!players.has(playerId)) {
     players.set(playerId, {
+        name: playerId,
         flips: 0,
         matches: 0,
     })
@@ -102,10 +136,14 @@ if (!players.has(playerId)) {
 
     console.log('Identified:', playerId)
 
-    socket.send(JSON.stringify({
-        type: 'player',
-        playerId,
-    }))
+const player = players.get(playerId)!
+
+socket.send(JSON.stringify({
+    type: 'player',
+    playerId,
+    flips: player.flips,
+    matches: player.matches,
+}))
 
     return
 }
@@ -116,6 +154,28 @@ if (message.type === 'sync') {
         revealed: game.revealed,
         matched: game.matched,
     }))
+
+    return
+}
+
+if (message.type === 'name') {
+    const player = players.get(playerId)
+
+    if (!player) {
+        return
+    }
+
+    player.name = message.name
+
+    for (const client of clients) {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify({
+                type: 'name',
+                playerId,
+                name: player.name,
+            }))
+        }
+    }
 
     return
 }
@@ -182,7 +242,17 @@ const matchMessage = JSON.stringify({
     second,
     match,
 })
+const leader = getLeader()
 
+for (const client of clients) {
+    if (client.readyState === WebSocket.OPEN) {
+        client.send(JSON.stringify({
+            type: 'leader',
+            playerId: leader.name,
+            matches: leader.matches,
+        }))
+    }
+}
 for (const client of clients) {
     client.send(matchMessage)
 }
