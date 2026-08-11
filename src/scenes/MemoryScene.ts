@@ -141,7 +141,7 @@ if (message.type === 'player') {
 
 if (message.type === 'leader') {
     this.ui.setRanking(
-        message.playerId,
+        message.name,
         message.matches,
     )
 }

@@ -84,7 +84,6 @@ for (const client of clients) {
         client.send(JSON.stringify({
             type: 'leader',
             playerId: leader.playerId,
-            name: leader.name,
             matches: leader.matches,
         }))
 
@@ -230,8 +229,7 @@ for (const client of clients) {
     if (client.readyState === WebSocket.OPEN) {
         client.send(JSON.stringify({
             type: 'leader',
-            playerId: leader.playerId,
-            name: leader.name,
+            playerId: leader.name,
             matches: leader.matches,
         }))
 

@@ -112,12 +112,9 @@ setDisplayName(name: string) {
         playerId: string,
         matches: number,
     ) {
-        const displayName =
-            localStorage.getItem('displayName') ||
-            playerId
 
         this.ranking.setText(
-            `Ranking|#1 ${displayName}-M:${matches}`,
+            `Ranking|#1 ${playerId}-M:${matches}`,
         )
     }
 
