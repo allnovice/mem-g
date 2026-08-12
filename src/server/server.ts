@@ -1,5 +1,6 @@
 import { WebSocketServer, WebSocket } from 'ws'
 import Game from '../game/Game.ts'
+import { db } from './db.ts'
 
 const symbols = [
     'academic-cap.svg',
@@ -36,10 +37,35 @@ const players = new Map<string, {
     flips: number
     matches: number
 }>()
-const clients = new Set<WebSocket>()
-
 let globalFlips = 0
 let globalMatches = 0
+
+async function updateGlobalStats() {
+    const result = await db.query(`
+        SELECT
+            COALESCE(SUM(flips), 0) AS flips,
+            COALESCE(SUM(matches), 0) AS matches
+        FROM players
+    `)
+
+    globalFlips = Number(result.rows[0].flips)
+    globalMatches = Number(result.rows[0].matches)
+}
+const result = await db.query(
+    'SELECT player_id, name, flips, matches FROM players'
+)
+
+for (const player of result.rows) {
+    players.set(player.player_id, {
+        name: player.name,
+        flips: player.flips,
+        matches: player.matches,
+    })
+}
+
+console.log(`Loaded ${result.rows.length} players from database`)
+await updateGlobalStats()
+const clients = new Set<WebSocket>()
 
 function getLeader() {
     let leaderId = ''
@@ -60,6 +86,7 @@ function getLeader() {
         matches: highestMatches,
     }
 }
+
 server.on('connection', socket => {
     console.log('Client connected')
 
@@ -98,17 +125,32 @@ for (const client of clients) {
 socket.on('close', () => {
     clients.delete(socket)
 })
-    socket.on('message', data => {
+    socket.on('message', async data => {
         const message = JSON.parse(data.toString())
 if (message.type === 'identify') {
     playerId =
     message.playerId || createGuestId()
 if (!players.has(playerId)) {
-    players.set(playerId, {
+    const player = {
         name: playerId,
         flips: 0,
         matches: 0,
-    })
+    }
+
+    players.set(playerId, player)
+
+    await db.query(
+        `INSERT INTO players
+            (player_id, name, flips, matches)
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT (player_id) DO NOTHING`,
+        [
+            playerId,
+            player.name,
+            player.flips,
+            player.matches,
+        ],
+    )
 }
 
     console.log('Identified:', playerId)
@@ -144,6 +186,16 @@ if (message.type === 'name') {
 
     player.name = message.name
 
+await db.query(
+    `UPDATE players
+     SET name = $1, updated_at = now()
+     WHERE player_id = $2`,
+    [
+        player.name,
+        playerId,
+    ],
+)
+
     for (const client of clients) {
         if (client.readyState === WebSocket.OPEN) {
             client.send(JSON.stringify({
@@ -164,9 +216,29 @@ if (message.type === 'name') {
             return
         }
 
-        players.get(playerId!)!.flips++
-        globalFlips++
+players.get(playerId!)!.flips++
 
+await db.query(
+    `UPDATE players
+     SET flips = $1, updated_at = now()
+     WHERE player_id = $2`,
+    [
+        players.get(playerId!)!.flips,
+        playerId,
+    ],
+)
+
+await updateGlobalStats()
+
+await db.query(
+    `UPDATE players
+     SET flips = $1, updated_at = now()
+     WHERE player_id = $2`,
+    [
+        players.get(playerId!)!.flips,
+        playerId,
+    ],
+)
 socket.send(JSON.stringify({
     type: 'stats',
     playerId,
@@ -198,11 +270,22 @@ for (const client of clients) {
         const second = game.revealed[1]
 
         const match = game.checkMatch()
+
 if (match === true) {
     players.get(playerId!)!.matches++
-    globalMatches++
-}
 
+    await db.query(
+        `UPDATE players
+         SET matches = $1, updated_at = now()
+         WHERE player_id = $2`,
+        [
+            players.get(playerId!)!.matches,
+            playerId,
+        ],
+    )
+
+    await updateGlobalStats()
+}
 
 socket.send(JSON.stringify({
     type: 'stats',
