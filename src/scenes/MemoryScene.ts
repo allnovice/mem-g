@@ -385,7 +385,9 @@ if (message.type === 'stats') {
     }
 
     resetBoard(cards: Card[]) {
-        this.children.removeAll(true)
+        for (const card of this.cardObjects) {
+            card.destroy()
+        }
 
         this.cards = cards
         this.cardObjects = []
