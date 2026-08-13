@@ -104,7 +104,14 @@ this.socket = new WebSocket(
         ? `${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}${wsUrl}`
         : wsUrl,
 )
+this.socket.onopen = () => {
+    console.log('WebSocket connected')
+    this.ui.setServerStatus('')
+}
 
+this.socket.onclose = () => {
+    console.log('WebSocket disconnected')
+}
 this.ui.setNameChangeHandler(
     (name) => {
         this.socket.send(

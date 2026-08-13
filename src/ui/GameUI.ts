@@ -7,6 +7,7 @@ export default class GameUI {
     private onNameChange:
     ((name: string) => void) | null = null
     private globalStats: Phaser.GameObjects.Text
+    private serverStatus: Phaser.GameObjects.Text
 
     constructor(scene: Phaser.Scene) {
         this.stats = scene.add.text(
@@ -64,6 +65,19 @@ this.globalStats = scene.add.text(
 
 this.globalStats.setOrigin(1, 0)
 this.globalStats.setDepth(1000)
+
+this.serverStatus = scene.add.text(
+    scene.scale.width - 10,
+    76,
+    'Server is waking up...',
+    {
+        fontSize: '16px',
+        color: '#ffffff',
+    },
+)
+
+this.serverStatus.setOrigin(1, 0)
+this.serverStatus.setDepth(1000)
 
         this.playerName.on(
             'pointerdown',
@@ -267,6 +281,9 @@ setNameChangeHandler(
     handler: (name: string) => void,
 ) {
     this.onNameChange = handler
+}
+setServerStatus(message: string) {
+    this.serverStatus.setText(message)
 }
 setGlobalStats(
     flips: number,
